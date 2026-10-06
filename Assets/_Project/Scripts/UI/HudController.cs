@@ -27,6 +27,7 @@ namespace ChronosRepairShop
 
         void Start()
         {
+            if (!Validate()) { enabled = false; return; }
             levelTitle.text = level.Level.displayName;
 
             foreach (var def in level.Inventory.Parts)
@@ -41,6 +42,19 @@ namespace ChronosRepairShop
             OnStateChanged(level.State);
         }
 
+        bool Validate()
+        {
+            bool ok = true;
+            void Need(Object o, string n) { if (!o) { Debug.LogError("HudController: '" + n + "' is not assigned. Re-run Chronos > Build Level 01.", this); ok = false; } }
+            Need(level, "level"); Need(placement, "placement"); Need(result, "result");
+            Need(levelTitle, "levelTitle"); Need(phaseLabel, "phaseLabel"); Need(timerLabel, "timerLabel");
+            Need(darknessBar, "darknessBar"); Need(startButton, "startButton");
+            Need(rotateLeftButton, "rotateLeftButton"); Need(rotateRightButton, "rotateRightButton");
+            Need(placementUI, "placementUI"); Need(slotRoot, "slotRoot"); Need(slotPrefab, "slotPrefab");
+            if (ok && level.Level == null) { Debug.LogError("HudController: LevelController has no LevelData (assign fallbackLevel).", this); ok = false; }
+            return ok;
+        }
+
         void OnStateChanged(GameState s)
         {
             placementUI.SetActive(s == GameState.Placement);
@@ -49,6 +63,7 @@ namespace ChronosRepairShop
 
         void Update()
         {
+            if (!level) return;
             bool timed = level.TimeTotal > 0f && (level.State == GameState.Placement || level.State == GameState.Running);
             timerLabel.gameObject.SetActive(timed);
             if (!timed) return;

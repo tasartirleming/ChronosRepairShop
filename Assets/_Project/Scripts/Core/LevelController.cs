@@ -40,12 +40,14 @@ namespace ChronosRepairShop
             var gm = GameManager.Instance;
             gm.SetCurrentIfNone(fallbackLevel);
             Level = gm.CurrentLevel;
+            if (!Level) { Debug.LogError("LevelController: no LevelData. Assign 'fallbackLevel'.", this); enabled = false; return; }
             Inventory = new PartInventory(Level.parts);
             baseGravity = Physics2D.gravity;
         }
 
         void Start()
         {
+            if (!Level) return;
             if (placement) placement.Bind(Inventory);
             if (gate) gate.BallEntered += OnBallEnteredGate;
             ApplyGravity();

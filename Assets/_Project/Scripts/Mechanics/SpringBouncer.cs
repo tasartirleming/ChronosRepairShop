@@ -22,7 +22,7 @@ namespace ChronosRepairShop
             Vector2 up = transform.up;
             Vector2 right = transform.right;
             Vector2 sideways = Vector2.Dot(ball.PreviousVelocity, right) * right;
-            ball.Body.velocity = up * launchSpeed + sideways * keepSideways;
+            ball.Body.linearVelocity = up * launchSpeed + sideways * keepSideways;
             onBounce?.Invoke();
         }
     }

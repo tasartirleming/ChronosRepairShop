@@ -30,9 +30,9 @@ namespace ChronosRepairShop
         public void Release(EraRules rules, Vector2 launchVelocity)
         {
             Body.simulated = true;
-            Body.drag = rules.ballDrag;
+            Body.linearDamping = rules.ballDrag;
             wind = rules.wind;
-            Body.velocity = launchVelocity;
+            Body.linearVelocity = launchVelocity;
             PreviousVelocity = launchVelocity;
             active = true;
         }
@@ -40,7 +40,7 @@ namespace ChronosRepairShop
         public void Freeze()
         {
             active = false;
-            Body.velocity = Vector2.zero;
+            Body.linearVelocity = Vector2.zero;
             Body.simulated = false;
         }
 
@@ -48,12 +48,12 @@ namespace ChronosRepairShop
         {
             if (!active) return;
 
-            PreviousVelocity = Body.velocity;
+            PreviousVelocity = Body.linearVelocity;
             if (wind != Vector2.zero) Body.AddForce(wind);
-            if (Body.velocity.sqrMagnitude > maxSpeed * maxSpeed)
-                Body.velocity = Body.velocity.normalized * maxSpeed;
+            if (Body.linearVelocity.sqrMagnitude > maxSpeed * maxSpeed)
+                Body.linearVelocity = Body.linearVelocity.normalized * maxSpeed;
 
-            stuckTimer = Body.velocity.magnitude < stuckSpeed ? stuckTimer + Time.fixedDeltaTime : 0f;
+            stuckTimer = Body.linearVelocity.magnitude < stuckSpeed ? stuckTimer + Time.fixedDeltaTime : 0f;
             if (stuckTimer >= stuckSeconds)
             {
                 stuckTimer = 0f;

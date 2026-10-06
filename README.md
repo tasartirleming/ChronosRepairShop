@@ -1,7 +1,6 @@
 # Chronos Repair Shop (Zaman Bükücü Saatçi)
 
-Fizik tabanlı bulmaca + arcade mobil oyun prototipi. Unity **2022.3 LTS**, 2D (Physics2D), legacy Input Manager + uGUI.
-(Unity 6'da `Rigidbody2D.velocity/drag` → `linearVelocity/linearDamping` olarak yeniden adlandırıldı; eski adlar çalışır ama uyarı verir.)
+Fizik tabanlı bulmaca + arcade mobil oyun prototipi. Unity **6.3 LTS (6000.3)**, 2D (Physics2D), legacy Input Manager + uGUI.
 
 ## Oyun döngüsü
 

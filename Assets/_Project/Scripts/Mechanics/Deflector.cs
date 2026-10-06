@@ -23,7 +23,7 @@ namespace ChronosRepairShop
             Vector2 incoming = ball.PreviousVelocity;
             if (Vector2.Dot(n, incoming) > 0f) n = -n;      // make sure the normal faces the ball
 
-            ball.Body.velocity = Vector2.Reflect(incoming, n) * mirrorGain;
+            ball.Body.linearVelocity = Vector2.Reflect(incoming, n) * mirrorGain;
         }
     }
 }

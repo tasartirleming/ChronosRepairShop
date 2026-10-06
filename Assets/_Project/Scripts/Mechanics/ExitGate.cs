@@ -4,7 +4,7 @@ using UnityEngine.Events;
 
 namespace ChronosRepairShop
 {
-    /// <summary>Solid door (blocks the ball while closed) plus a trigger that wins the level when the ball enters an open gate.</summary>
+    /// <summary>Solid door object (collider + sprite, hidden when open; blocks the ball while closed) plus a trigger that wins the level when the ball enters an open gate.</summary>
     public class ExitGate : MonoBehaviour
     {
         [SerializeField] Collider2D door;
@@ -17,14 +17,14 @@ namespace ChronosRepairShop
         public void Open()
         {
             IsOpen = true;
-            if (door) door.enabled = false;
+            if (door) door.gameObject.SetActive(false);
             onOpened?.Invoke();
         }
 
         public void Close()
         {
             IsOpen = false;
-            if (door) door.enabled = true;
+            if (door) door.gameObject.SetActive(true);
             onClosed?.Invoke();
         }
 

@@ -29,7 +29,7 @@ namespace ChronosRepairShop
             if (r.Won)
             {
                 titleLabel.text = "Zaman Onarıldı";
-                starsLabel.text = new string('★', r.Stars) + new string('☆', 3 - r.Stars);
+                starsLabel.text = r.Stars + " / 3 yıldız";
                 bodyLabel.text = level.storyFragment;
             }
             else

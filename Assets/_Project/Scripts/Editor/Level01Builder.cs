@@ -66,6 +66,17 @@ namespace ChronosRepairShop.EditorTools
             campaign.eras = new System.Collections.Generic.List<EraData> { era };
             EditorUtility.SetDirty(campaign);
             AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+
+            // Re-load everything from disk so the scene stores references to the real saved assets.
+            level = AssetDatabase.LoadAssetAtPath<LevelData>($"{Root}/ScriptableObjects/Levels/Level_Egypt_01.asset");
+            ballPrefab = AssetDatabase.LoadAssetAtPath<GameObject>($"{Root}/Prefabs/Level/EnergyBall.prefab").GetComponent<EnergyBall>();
+            slotPrefab = AssetDatabase.LoadAssetAtPath<GameObject>($"{Root}/Prefabs/UI/PartSlot.prefab").GetComponent<PartSlotUI>();
+            if (!level || !ballPrefab || !slotPrefab)
+            {
+                Debug.LogError($"Chronos build failed to reload assets: level={level} ball={ballPrefab} slot={slotPrefab}");
+                return;
+            }
 
             BuildScene(level, ballPrefab, slotPrefab, gearSprite, squareSprite, matStatic, matGear);
             Debug.Log("Chronos: Level 01 built. Open Assets/_Project/Scenes/" + SceneName + ".unity, set Game view to a portrait aspect (9:16) and press Play.");
@@ -394,7 +405,15 @@ namespace ChronosRepairShop.EditorTools
             set(p);
             so.ApplyModifiedPropertiesWithoutUndo();
         }
-        static void Ref(Object t, string f, Object v) => Edit(t, f, p => p.objectReferenceValue = v);
+        static void Ref(Object t, string f, Object v)
+        {
+            if (!v) Debug.LogError($"Chronos build: value for '{f}' on {t.GetType().Name} is null");
+            Edit(t, f, p =>
+            {
+                p.objectReferenceValue = v;
+                if (v && !p.objectReferenceValue) Debug.LogError($"Chronos build: could not assign '{f}' on {t.GetType().Name} ({v.GetType().Name} '{v.name}')");
+            });
+        }
         static void Int(Object t, string f, int v) => Edit(t, f, p => p.intValue = v);
         static void Float(Object t, string f, float v) => Edit(t, f, p => p.floatValue = v);
         static void RefList(Object t, string f, params Object[] v) => Edit(t, f, p =>

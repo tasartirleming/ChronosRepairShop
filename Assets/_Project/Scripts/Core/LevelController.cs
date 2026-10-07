@@ -38,7 +38,10 @@ namespace ChronosRepairShop
         {
             Instance = this;
             var gm = GameManager.Instance;
-            gm.SetCurrentIfNone(fallbackLevel);
+            var start = fallbackLevel;
+            if (!start && gm.Campaign && gm.Campaign.eras.Count > 0 && gm.Campaign.eras[0].levels.Count > 0)
+                start = gm.Campaign.eras[0].levels[0];
+            gm.SetCurrentIfNone(start);
             Level = gm.CurrentLevel;
             if (!Level) { Debug.LogError("LevelController: no LevelData. Assign 'fallbackLevel'.", this); enabled = false; return; }
             Inventory = new PartInventory(Level.parts);

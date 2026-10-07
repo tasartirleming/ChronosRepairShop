@@ -12,13 +12,14 @@ namespace ChronosRepairShop
     {
         public static readonly List<PlaceablePart> All = new List<PlaceablePart>();
 
+        [Tooltip("On for weights that should fall once the run starts. Gears, mirrors and springs stay fixed.")]
+        [SerializeField] bool dynamicWhenRunning = false;
         [SerializeField] Color validTint = new Color(0.6f, 1f, 0.6f, 1f);
         [SerializeField] Color invalidTint = new Color(1f, 0.4f, 0.4f, 1f);
 
         Rigidbody2D body;
         Collider2D col;
         SpriteRenderer[] sprites;
-        RigidbodyType2D runtimeType;
 
         public PartDefinition Definition { get; private set; }
         public Bounds Bounds => col.bounds;
@@ -28,7 +29,6 @@ namespace ChronosRepairShop
             body = GetComponent<Rigidbody2D>();
             col = GetComponent<Collider2D>();
             sprites = GetComponentsInChildren<SpriteRenderer>();
-            runtimeType = body.bodyType;
             body.bodyType = RigidbodyType2D.Kinematic;
         }
 
@@ -73,7 +73,7 @@ namespace ChronosRepairShop
 
         public void BeginRun()
         {
-            body.bodyType = runtimeType;
+            body.bodyType = dynamicWhenRunning ? RigidbodyType2D.Dynamic : RigidbodyType2D.Kinematic;
             body.WakeUp();
             ClearPreview();
         }

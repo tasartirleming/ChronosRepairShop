@@ -37,7 +37,9 @@ namespace ChronosRepairShop
         /// <summary>Called by an inventory slot when the player presses it: spawns a part under the finger.</summary>
         public void BeginSpawn(PartDefinition def, Vector2 screenPos)
         {
-            if (locked || held || !inventory.TryTake(def)) return;
+            if (locked || held) return;
+            if (!def.prefab) { Debug.LogError("PartDefinition '" + def.name + "' has no prefab. Re-run Chronos > Build Level 01.", def); return; }
+            if (!inventory.TryTake(def)) return;
             var part = Instantiate(def.prefab);
             part.Init(def);
             part.transform.position = SnapPosition(ScreenToWorld(screenPos));

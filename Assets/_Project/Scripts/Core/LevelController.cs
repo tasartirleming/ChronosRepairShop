@@ -94,6 +94,7 @@ namespace ChronosRepairShop
         {
             if (State != GameState.Placement) return;
 
+            if (!ballPrefab || !ballSpawn) { Debug.LogError("LevelController: ballPrefab/ballSpawn not assigned. Re-run Chronos > Build Level 01.", this); return; }
             if (placement) placement.Lock();
             foreach (var part in PlaceablePart.All) part.BeginRun();
 

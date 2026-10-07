@@ -38,6 +38,13 @@ namespace ChronosRepairShop.EditorTools
             var mirrorPrefab = MakeMirrorPrefab(mirrorSprite, matMirror);
             var slotPrefab = MakeSlotPrefab();
 
+            // Re-load prefabs from disk so every asset stores a reference to the real saved object.
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+            gearPrefab = AssetDatabase.LoadAssetAtPath<GameObject>($"{Root}/Prefabs/Parts/Part_Gear.prefab").GetComponent<PlaceablePart>();
+            mirrorPrefab = AssetDatabase.LoadAssetAtPath<GameObject>($"{Root}/Prefabs/Parts/Part_Mirror.prefab").GetComponent<PlaceablePart>();
+            if (!gearPrefab || !mirrorPrefab) { Debug.LogError("Chronos build: part prefabs failed to reload"); return; }
+
             // ---- data
             var gearDef = MakePart("Gear_Small", "Küçük Dişli", PartKind.Gear, gearSprite, gearPrefab, 15f);
             var mirrorDef = MakePart("Mirror", "Ayna", PartKind.Mirror, mirrorSprite, mirrorPrefab, 15f);

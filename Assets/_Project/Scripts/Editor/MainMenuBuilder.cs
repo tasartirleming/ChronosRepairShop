@@ -77,19 +77,19 @@ namespace ChronosRepairShop.EditorTools
         static void BuildUI(Sprite rounded, Sprite square)
         {
             var res = UiResources();
-            var canvasGo = Canvas("Canvas", out var cr);
+            var canvasGo = MakeCanvas("Canvas", out var cr);
 
-            Label(res, cr, "TitleTop", "CHRONOS", 150, TextAnchor.MiddleCenter, Amber,
+            MakeLabel(res, cr, "TitleTop", "CHRONOS", 150, TextAnchor.MiddleCenter, Amber,
                 new Vector2(0, 0.66f), new Vector2(1, 0.80f), Vector2.zero, Vector2.zero);
-            Label(res, cr, "TitleBottom", "REPAIR SHOP", 70, TextAnchor.MiddleCenter, Cyan,
+            MakeLabel(res, cr, "TitleBottom", "REPAIR SHOP", 70, TextAnchor.MiddleCenter, Cyan,
                 new Vector2(0, 0.605f), new Vector2(1, 0.67f), Vector2.zero, Vector2.zero);
-            Label(res, cr, "Tagline", "Kırık zamanı tamir et.", 38, TextAnchor.MiddleCenter, new Color(0.65f, 0.72f, 0.9f),
+            MakeLabel(res, cr, "Tagline", "Kırık zamanı tamir et.", 38, TextAnchor.MiddleCenter, new Color(0.65f, 0.72f, 0.9f),
                 new Vector2(0, 0.56f), new Vector2(1, 0.605f), Vector2.zero, Vector2.zero);
 
-            var eraLabel = Label(res, cr, "EraLabel", "", 42, TextAnchor.MiddleCenter, Color.white,
+            var eraLabel = MakeLabel(res, cr, "EraLabel", "", 42, TextAnchor.MiddleCenter, Color.white,
                 new Vector2(0.05f, 0.40f), new Vector2(0.95f, 0.45f), Vector2.zero, Vector2.zero);
 
-            var track = Panel(res, cr, "ProgressTrack", rounded, new Color(1, 1, 1, 0.10f),
+            var track = MakePanel(res, cr, "ProgressTrack", rounded, new Color(1, 1, 1, 0.10f),
                 new Vector2(0.15f, 0.385f), new Vector2(0.85f, 0.385f), new Vector2(0, 0), new Vector2(0, 18));
             var fillGo = new GameObject("Fill", typeof(RectTransform), typeof(Image));
             fillGo.transform.SetParent(track.transform, false);
@@ -98,14 +98,14 @@ namespace ChronosRepairShop.EditorTools
             fill.sprite = square; fill.type = Image.Type.Filled; fill.fillMethod = Image.FillMethod.Horizontal;
             fill.fillOrigin = 0; fill.fillAmount = 0f; fill.color = Amber; fill.raycastTarget = false;
 
-            var progressLabel = Label(res, cr, "ProgressLabel", "", 32, TextAnchor.MiddleCenter, new Color(0.65f, 0.72f, 0.9f),
+            var progressLabel = MakeLabel(res, cr, "ProgressLabel", "", 32, TextAnchor.MiddleCenter, new Color(0.65f, 0.72f, 0.9f),
                 new Vector2(0.05f, 0.34f), new Vector2(0.95f, 0.38f), Vector2.zero, Vector2.zero);
 
-            var play = Button(res, cr, "PlayButton", "OYNA", rounded, Cyan, Ink, 72,
+            var play = MakeButton(res, cr, "PlayButton", "OYNA", rounded, Cyan, Ink, 72,
                 new Vector2(0.2f, 0.20f), new Vector2(0.8f, 0.20f), new Vector2(0, 0), new Vector2(0, 170));
-            var quit = Button(res, cr, "QuitButton", "ÇIKIŞ", rounded, Slate, Color.white, 40,
+            var quit = MakeButton(res, cr, "QuitButton", "ÇIKIŞ", rounded, Slate, Color.white, 40,
                 new Vector2(0.3f, 0.11f), new Vector2(0.7f, 0.11f), new Vector2(0, 0), new Vector2(0, 110));
-            Label(res, cr, "Version", "prototip v0.1", 28, TextAnchor.MiddleCenter, new Color(1, 1, 1, 0.3f),
+            MakeLabel(res, cr, "Version", "prototip v0.1", 28, TextAnchor.MiddleCenter, new Color(1, 1, 1, 0.3f),
                 new Vector2(0, 0), new Vector2(1, 0.05f), Vector2.zero, Vector2.zero);
 
             var ctrl = canvasGo.AddComponent<MainMenuController>();

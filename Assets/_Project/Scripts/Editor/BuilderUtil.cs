@@ -70,7 +70,7 @@ namespace ChronosRepairShop.EditorTools
             for (int i = 0; i < v.Length; i++) p.GetArrayElementAtIndex(i).objectReferenceValue = v[i];
         });
 
-        public static int Mask(params string[] layers)
+        public static int LayerMaskOf(params string[] layers)
         {
             int m = 0;
             foreach (var l in layers) m |= 1 << LayerMask.NameToLayer(l);
@@ -117,7 +117,7 @@ namespace ChronosRepairShop.EditorTools
 
         public static void Stretch(GameObject go) => Place(go, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
 
-        public static GameObject Canvas(string name, out Transform root)
+        public static GameObject MakeCanvas(string name, out Transform root)
         {
             var go = new GameObject(name);
             var canvas = go.AddComponent<Canvas>();
@@ -131,7 +131,7 @@ namespace ChronosRepairShop.EditorTools
             return go;
         }
 
-        public static GameObject Label(DefaultControls.Resources res, Transform parent, string name, string text, int size,
+        public static GameObject MakeLabel(DefaultControls.Resources res, Transform parent, string name, string text, int size,
                                        TextAnchor anchor, Color color, Vector2 aMin, Vector2 aMax, Vector2 oMin, Vector2 oMax)
         {
             var go = DefaultControls.CreateText(res);
@@ -144,7 +144,7 @@ namespace ChronosRepairShop.EditorTools
             return go;
         }
 
-        public static GameObject Button(DefaultControls.Resources res, Transform parent, string name, string text, Sprite rounded,
+        public static GameObject MakeButton(DefaultControls.Resources res, Transform parent, string name, string text, Sprite rounded,
                                         Color bg, Color textColor, int fontSize, Vector2 aMin, Vector2 aMax, Vector2 oMin, Vector2 oMax)
         {
             var go = DefaultControls.CreateButton(res);
@@ -164,7 +164,7 @@ namespace ChronosRepairShop.EditorTools
             return go;
         }
 
-        public static GameObject Panel(DefaultControls.Resources res, Transform parent, string name, Sprite rounded, Color color,
+        public static GameObject MakePanel(DefaultControls.Resources res, Transform parent, string name, Sprite rounded, Color color,
                                        Vector2 aMin, Vector2 aMax, Vector2 oMin, Vector2 oMax)
         {
             var go = DefaultControls.CreatePanel(res);

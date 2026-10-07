@@ -177,9 +177,9 @@ namespace ChronosRepairShop.EditorTools
             var placementGo = new GameObject("Placement");
             var placement = placementGo.AddComponent<PlacementController>();
             Ref(placement, "cam", cam);
-            int parts = Mask(LParts, LGear);
+            int parts = LayerMaskOf(LParts, LGear);
             Int(placement, "partsMask", parts);
-            Int(placement, "blockingMask", parts | Mask(LStatic));
+            Int(placement, "blockingMask", parts | LayerMaskOf(LStatic));
             Float(placement, "gridSnap", 0.25f);
 
             var lc = new GameObject("LevelController").AddComponent<LevelController>();
@@ -200,20 +200,20 @@ namespace ChronosRepairShop.EditorTools
         static void BuildUI(LevelController lc, PlacementController placement, PartSlotUI slotPrefab, Sprite rounded, Sprite square)
         {
             var res = UiResources();
-            var canvasGo = Canvas("Canvas", out var cr);
+            var canvasGo = MakeCanvas("Canvas", out var cr);
 
             // darkness overlay (never blocks input)
-            var overlay = Panel(res, cr, "DarknessOverlay", null, new Color(0, 0, 0, 0), Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
+            var overlay = MakePanel(res, cr, "DarknessOverlay", null, new Color(0, 0, 0, 0), Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
             overlay.GetComponent<Image>().raycastTarget = false;
             var oi = overlay.GetComponent<Image>();
 
-            var menu = Button(res, cr, "MenuButton", "MENÜ", rounded, Slate, Color.white, 36,
+            var menu = MakeButton(res, cr, "MenuButton", "MENÜ", rounded, Slate, Color.white, 36,
                 new Vector2(0, 1), new Vector2(0, 1), new Vector2(30, -130), new Vector2(230, -40));
-            var title = Label(res, cr, "LevelTitle", "", 48, TextAnchor.MiddleCenter, Color.white,
+            var title = MakeLabel(res, cr, "LevelTitle", "", 48, TextAnchor.MiddleCenter, Color.white,
                 new Vector2(0.25f, 1), new Vector2(0.75f, 1), new Vector2(0, -130), new Vector2(0, -40));
-            var phase = Label(res, cr, "PhaseLabel", "", 36, TextAnchor.MiddleCenter, new Color(0.6f, 0.7f, 0.85f),
+            var phase = MakeLabel(res, cr, "PhaseLabel", "", 36, TextAnchor.MiddleCenter, new Color(0.6f, 0.7f, 0.85f),
                 new Vector2(0.25f, 1), new Vector2(0.75f, 1), new Vector2(0, -190), new Vector2(0, -130));
-            var timer = Label(res, cr, "Timer", "", 84, TextAnchor.MiddleRight, Cyan,
+            var timer = MakeLabel(res, cr, "Timer", "", 84, TextAnchor.MiddleRight, Cyan,
                 new Vector2(0.72f, 1), new Vector2(1, 1), new Vector2(0, -150), new Vector2(-30, -20));
 
             var sliderGo = DefaultControls.CreateSlider(res);
@@ -223,7 +223,7 @@ namespace ChronosRepairShop.EditorTools
             StyleSlider(slider, rounded, new Color(1, 1, 1, 0.08f), Amber);
 
             // bottom placement bar
-            var bar = Panel(res, cr, "PlacementUI", rounded, new Color(0.04f, 0.05f, 0.10f, 0.88f),
+            var bar = MakePanel(res, cr, "PlacementUI", rounded, new Color(0.04f, 0.05f, 0.10f, 0.88f),
                 new Vector2(0, 0), new Vector2(1, 0), new Vector2(20, 20), new Vector2(-20, 450));
 
             var slotRoot = new GameObject("Slots", typeof(RectTransform));
@@ -233,29 +233,29 @@ namespace ChronosRepairShop.EditorTools
             hl.childAlignment = TextAnchor.MiddleCenter; hl.spacing = 40;
             hl.childControlWidth = false; hl.childControlHeight = false;
 
-            var rotL = Button(res, bar.transform, "RotateLeft", "DÖNDÜR -", rounded, Slate, Color.white, 38,
+            var rotL = MakeButton(res, bar.transform, "RotateLeft", "DÖNDÜR -", rounded, Slate, Color.white, 38,
                 new Vector2(0.03f, 0), new Vector2(0.30f, 0), new Vector2(0, 20), new Vector2(0, 150));
-            var start = Button(res, bar.transform, "Start", "BAŞLAT", rounded, Cyan, Ink, 50,
+            var start = MakeButton(res, bar.transform, "Start", "BAŞLAT", rounded, Cyan, Ink, 50,
                 new Vector2(0.34f, 0), new Vector2(0.66f, 0), new Vector2(0, 20), new Vector2(0, 150));
-            var rotR = Button(res, bar.transform, "RotateRight", "DÖNDÜR +", rounded, Slate, Color.white, 38,
+            var rotR = MakeButton(res, bar.transform, "RotateRight", "DÖNDÜR +", rounded, Slate, Color.white, 38,
                 new Vector2(0.70f, 0), new Vector2(0.97f, 0), new Vector2(0, 20), new Vector2(0, 150));
 
             // result panel: dim backdrop + card
             var resultGo = new GameObject("ResultPanel", typeof(RectTransform));
             resultGo.transform.SetParent(cr, false);
             Stretch(resultGo);
-            var dim = Panel(res, resultGo.transform, "Root", null, new Color(0, 0, 0, 0.75f), Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
-            var card = Panel(res, dim.transform, "Card", rounded, new Color(0.08f, 0.10f, 0.18f, 0.98f),
+            var dim = MakePanel(res, resultGo.transform, "Root", null, new Color(0, 0, 0, 0.75f), Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
+            var card = MakePanel(res, dim.transform, "Card", rounded, new Color(0.08f, 0.10f, 0.18f, 0.98f),
                 new Vector2(0.06f, 0.25f), new Vector2(0.94f, 0.78f), Vector2.zero, Vector2.zero);
-            var rTitle = Label(res, card.transform, "Title", "", 80, TextAnchor.MiddleCenter, Amber,
+            var rTitle = MakeLabel(res, card.transform, "Title", "", 80, TextAnchor.MiddleCenter, Amber,
                 new Vector2(0, 0.78f), new Vector2(1, 0.95f), Vector2.zero, Vector2.zero);
-            var rStars = Label(res, card.transform, "Stars", "", 48, TextAnchor.MiddleCenter, Cyan,
+            var rStars = MakeLabel(res, card.transform, "Stars", "", 48, TextAnchor.MiddleCenter, Cyan,
                 new Vector2(0, 0.68f), new Vector2(1, 0.78f), Vector2.zero, Vector2.zero);
-            var rBody = Label(res, card.transform, "Body", "", 42, TextAnchor.UpperCenter, new Color(0.85f, 0.9f, 1f),
+            var rBody = MakeLabel(res, card.transform, "Body", "", 42, TextAnchor.UpperCenter, new Color(0.85f, 0.9f, 1f),
                 new Vector2(0.08f, 0.27f), new Vector2(0.92f, 0.66f), Vector2.zero, Vector2.zero);
-            var rRetry = Button(res, card.transform, "Retry", "TEKRAR", rounded, Slate, Color.white, 44,
+            var rRetry = MakeButton(res, card.transform, "Retry", "TEKRAR", rounded, Slate, Color.white, 44,
                 new Vector2(0.06f, 0.06f), new Vector2(0.48f, 0.06f), new Vector2(0, 0), new Vector2(0, 140));
-            var rNext = Button(res, card.transform, "Next", "SONRAKİ", rounded, Cyan, Ink, 44,
+            var rNext = MakeButton(res, card.transform, "Next", "SONRAKİ", rounded, Cyan, Ink, 44,
                 new Vector2(0.52f, 0.06f), new Vector2(0.94f, 0.06f), new Vector2(0, 0), new Vector2(0, 140));
             var result = resultGo.AddComponent<ResultPanel>();
             Ref(result, "root", dim);

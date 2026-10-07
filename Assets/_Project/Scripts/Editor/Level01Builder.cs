@@ -95,6 +95,16 @@ namespace ChronosRepairShop.EditorTools
         {
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
 
+            // NewScene unloads unused assets, which turns every asset reference we hold into null.
+            // Re-load everything from disk now.
+            level = AssetDatabase.LoadAssetAtPath<LevelData>($"{Root}/ScriptableObjects/Levels/Level_Egypt_01.asset");
+            ballPrefab = AssetDatabase.LoadAssetAtPath<GameObject>($"{Root}/Prefabs/Level/EnergyBall.prefab").GetComponent<EnergyBall>();
+            slotPrefab = AssetDatabase.LoadAssetAtPath<GameObject>($"{Root}/Prefabs/UI/PartSlot.prefab").GetComponent<PartSlotUI>();
+            gearSprite = AssetDatabase.LoadAssetAtPath<Sprite>($"{Root}/Art/Gear.png");
+            square = AssetDatabase.LoadAssetAtPath<Sprite>($"{Root}/Art/Square.png");
+            matStatic = AssetDatabase.LoadAssetAtPath<PhysicsMaterial2D>($"{Root}/Physics/Static.physicsMaterial2D");
+            matGear = AssetDatabase.LoadAssetAtPath<PhysicsMaterial2D>($"{Root}/Physics/Gear.physicsMaterial2D");
+
             // camera
             var camGo = new GameObject("Main Camera") { tag = "MainCamera" };
             var cam = camGo.AddComponent<Camera>();

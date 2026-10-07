@@ -35,6 +35,8 @@ namespace ChronosRepairShop
             SceneManager.LoadScene(level.sceneName);
         }
 
+        public void LoadMenu() => SceneManager.LoadScene(MenuScene);
+
         public void Retry()
         {
             if (CurrentLevel) LoadLevel(CurrentLevel);

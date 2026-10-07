@@ -26,12 +26,14 @@ namespace ChronosRepairShop
         }
 
         /// <summary>Builds a slot in code, so levels work even without a slot prefab.</summary>
-        public static PartSlotUI CreateDefault(Transform parent)
+        public static PartSlotUI CreateDefault(Transform parent, Sprite background = null)
         {
             var go = new GameObject("PartSlot", typeof(RectTransform), typeof(CanvasGroup), typeof(Image));
             go.transform.SetParent(parent, false);
             ((RectTransform)go.transform).sizeDelta = new Vector2(220, 220);
-            go.GetComponent<Image>().color = new Color(0.25f, 0.2f, 0.35f);
+            var bg = go.GetComponent<Image>();
+            bg.color = new Color(0.13f, 0.16f, 0.28f);
+            if (background) { bg.sprite = background; bg.type = Image.Type.Sliced; }
 
             var iconGo = new GameObject("Icon", typeof(RectTransform), typeof(Image));
             iconGo.transform.SetParent(go.transform, false);

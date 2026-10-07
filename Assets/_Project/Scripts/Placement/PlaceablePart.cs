@@ -14,8 +14,8 @@ namespace ChronosRepairShop
 
         [Tooltip("On for weights that should fall once the run starts. Gears, mirrors and springs stay fixed.")]
         [SerializeField] bool dynamicWhenRunning = false;
-        [SerializeField] Color validTint = new Color(0.6f, 1f, 0.6f, 1f);
-        [SerializeField] Color invalidTint = new Color(1f, 0.4f, 0.4f, 1f);
+        [SerializeField] Color validTint = new Color(0.75f, 1f, 0.9f, 0.9f);
+        [SerializeField] Color invalidTint = new Color(1f, 0.35f, 0.4f, 0.9f);
 
         Rigidbody2D body;
         Collider2D col;
@@ -28,7 +28,7 @@ namespace ChronosRepairShop
         {
             body = GetComponent<Rigidbody2D>();
             col = GetComponent<Collider2D>();
-            sprites = GetComponentsInChildren<SpriteRenderer>();
+            sprites = new[] { GetComponent<SpriteRenderer>() };   // root only, so child glows keep their own colour
             body.bodyType = RigidbodyType2D.Kinematic;
         }
 
@@ -46,12 +46,12 @@ namespace ChronosRepairShop
         public void SetPreview(bool valid)
         {
             var tint = valid ? validTint : invalidTint;
-            foreach (var s in sprites) s.color = tint;
+            foreach (var s in sprites) if (s) s.color = tint;
         }
 
         public void ClearPreview()
         {
-            foreach (var s in sprites) s.color = Color.white;
+            foreach (var s in sprites) if (s) s.color = Color.white;
         }
 
         public bool IsPlacementValid(ContactFilter2D blockers)

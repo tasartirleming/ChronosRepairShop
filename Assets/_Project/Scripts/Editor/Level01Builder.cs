@@ -1,18 +1,19 @@
+using System.Collections.Generic;
 using System.IO;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+using static ChronosRepairShop.EditorTools.BuilderUtil;
 
 namespace ChronosRepairShop.EditorTools
 {
-    /// <summary>Menu: Chronos > Build Level 01. Generates sprites, materials, prefabs, data assets and the playable scene.</summary>
+    /// <summary>Menu: Chronos > Build Level 01. Generates art, materials, prefabs, data assets and the playable scene.</summary>
     public static class Level01Builder
     {
-        const string Root = "Assets/_Project";
         const string SceneName = "Level_Egypt_01";
-
+        const string ScenePath = Root + "/Scenes/" + SceneName + ".unity";
         static string LGear, LParts, LBall, LStatic, LLeak, LZone;
 
         [MenuItem("Chronos/Build Level 01 (Egypt)")]
@@ -22,38 +23,32 @@ namespace ChronosRepairShop.EditorTools
             SetupCollisionMatrix();
             PlayerSettings.defaultInterfaceOrientation = UIOrientation.Portrait;
 
-            var gearSprite = MakeSprite("Gear", 128, 128, 128, GearPixels);
-            var ballSprite = MakeSprite("Ball", 64, 64, 64, BallPixels);
-            var squareSprite = MakeSprite("Square", 4, 4, 4, (x, y, w, h) => new Color32(255, 255, 255, 255));
-            var mirrorSprite = MakeSprite("Mirror", 4, 4, 4, (x, y, w, h) => new Color32(120, 220, 255, 255));
-
+            ArtFactory.EnsureAll();
+            var trailMat = ArtFactory.TrailMaterial();
             var matBall = MakeMaterial("Ball", 0.35f, 0.2f);
             var matGear = MakeMaterial("Gear", 0.1f, 0.8f);
             var matMirror = MakeMaterial("Mirror", 0f, 0f);
-            var matStatic = MakeMaterial("Static", 0.1f, 0.3f);
+            MakeMaterial("Static", 0.1f, 0.3f);
 
-            // ---- prefabs
-            var ballPrefab = MakeBallPrefab(ballSprite, matBall);
-            var gearPrefab = MakeGearPrefab(gearSprite, matGear, 0.6f, "Part_Gear");
-            var mirrorPrefab = MakeMirrorPrefab(mirrorSprite, matMirror);
-            var slotPrefab = MakeSlotPrefab();
-
-            // Re-load prefabs from disk so every asset stores a reference to the real saved object.
+            MakeBallPrefab(ArtFactory.Get(ArtFactory.Ball), matBall, trailMat);
+            MakeGearPrefab(ArtFactory.Get(ArtFactory.GearAmber), ArtFactory.Get(ArtFactory.Glow), matGear, 0.6f, "Part_Gear");
+            MakeMirrorPrefab(ArtFactory.Get(ArtFactory.Mirror), matMirror);
+            MakeSlotPrefab(ArtFactory.Get(ArtFactory.Rounded));
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
-            gearPrefab = AssetDatabase.LoadAssetAtPath<GameObject>($"{Root}/Prefabs/Parts/Part_Gear.prefab").GetComponent<PlaceablePart>();
-            mirrorPrefab = AssetDatabase.LoadAssetAtPath<GameObject>($"{Root}/Prefabs/Parts/Part_Mirror.prefab").GetComponent<PlaceablePart>();
+
+            var gearPrefab = Load<GameObject>($"{Root}/Prefabs/Parts/Part_Gear.prefab").GetComponent<PlaceablePart>();
+            var mirrorPrefab = Load<GameObject>($"{Root}/Prefabs/Parts/Part_Mirror.prefab").GetComponent<PlaceablePart>();
             if (!gearPrefab || !mirrorPrefab) { Debug.LogError("Chronos build: part prefabs failed to reload"); return; }
 
-            // ---- data
-            var gearDef = MakePart("Gear_Small", "Küçük Dişli", PartKind.Gear, gearSprite, gearPrefab, 15f);
-            var mirrorDef = MakePart("Mirror", "Ayna", PartKind.Mirror, mirrorSprite, mirrorPrefab, 15f);
+            var gearDef = MakePart("Gear_Small", "Küçük Dişli", PartKind.Gear, ArtFactory.Get(ArtFactory.GearAmber), gearPrefab, 15f);
+            var mirrorDef = MakePart("Mirror", "Ayna", PartKind.Mirror, ArtFactory.Get(ArtFactory.Mirror), mirrorPrefab, 15f);
 
             var level = LoadOrCreate<LevelData>($"{Root}/ScriptableObjects/Levels/Level_Egypt_01.asset");
             level.id = "egypt_01";
             level.displayName = "Kum Saati I";
             level.sceneName = SceneName;
-            level.parts = new System.Collections.Generic.List<PartAllotment>
+            level.parts = new List<PartAllotment>
             {
                 new PartAllotment { part = gearDef, count = 2 },
                 new PartAllotment { part = mirrorDef, count = 1 },
@@ -66,44 +61,34 @@ namespace ChronosRepairShop.EditorTools
 
             var era = LoadOrCreate<EraData>($"{Root}/ScriptableObjects/Eras/Era_Egypt.asset");
             era.eraName = "Antik Mısır - Kum Saati";
-            era.levels = new System.Collections.Generic.List<LevelData> { level };
+            era.levels = new List<LevelData> { level };
             EditorUtility.SetDirty(era);
 
             var campaign = LoadOrCreate<CampaignData>("Assets/Resources/Campaign.asset");
-            campaign.eras = new System.Collections.Generic.List<EraData> { era };
+            campaign.eras = new List<EraData> { era };
             EditorUtility.SetDirty(campaign);
             AssetDatabase.SaveAssets();
-            AssetDatabase.Refresh();
 
-            // Re-load everything from disk so the scene stores references to the real saved assets.
-            level = AssetDatabase.LoadAssetAtPath<LevelData>($"{Root}/ScriptableObjects/Levels/Level_Egypt_01.asset");
-            ballPrefab = AssetDatabase.LoadAssetAtPath<GameObject>($"{Root}/Prefabs/Level/EnergyBall.prefab").GetComponent<EnergyBall>();
-            slotPrefab = AssetDatabase.LoadAssetAtPath<GameObject>($"{Root}/Prefabs/UI/PartSlot.prefab").GetComponent<PartSlotUI>();
-            if (!level || !ballPrefab || !slotPrefab)
-            {
-                Debug.LogError($"Chronos build failed to reload assets: level={level} ball={ballPrefab} slot={slotPrefab}");
-                return;
-            }
-
-            BuildScene(level, ballPrefab, slotPrefab, gearSprite, squareSprite, matStatic, matGear);
-            Debug.Log("Chronos: Level 01 built. Open Assets/_Project/Scenes/" + SceneName + ".unity, set Game view to a portrait aspect (9:16) and press Play.");
+            BuildScene();
+            Debug.Log("Chronos: Level 01 built. Run Chronos > Build Main Menu for the title screen, then open MainMenu and press Play.");
         }
 
         // ------------------------------------------------------------------ scene
-        static void BuildScene(LevelData level, EnergyBall ballPrefab, PartSlotUI slotPrefab,
-                               Sprite gearSprite, Sprite square, PhysicsMaterial2D matStatic, PhysicsMaterial2D matGear)
+        static void BuildScene()
         {
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
 
-            // NewScene unloads unused assets, which turns every asset reference we hold into null.
-            // Re-load everything from disk now.
-            level = AssetDatabase.LoadAssetAtPath<LevelData>($"{Root}/ScriptableObjects/Levels/Level_Egypt_01.asset");
-            ballPrefab = AssetDatabase.LoadAssetAtPath<GameObject>($"{Root}/Prefabs/Level/EnergyBall.prefab").GetComponent<EnergyBall>();
-            slotPrefab = AssetDatabase.LoadAssetAtPath<GameObject>($"{Root}/Prefabs/UI/PartSlot.prefab").GetComponent<PartSlotUI>();
-            gearSprite = AssetDatabase.LoadAssetAtPath<Sprite>($"{Root}/Art/Gear.png");
-            square = AssetDatabase.LoadAssetAtPath<Sprite>($"{Root}/Art/Square.png");
-            matStatic = AssetDatabase.LoadAssetAtPath<PhysicsMaterial2D>($"{Root}/Physics/Static.physicsMaterial2D");
-            matGear = AssetDatabase.LoadAssetAtPath<PhysicsMaterial2D>($"{Root}/Physics/Gear.physicsMaterial2D");
+            // NewScene unloads unused assets: load everything fresh from disk.
+            var level = Load<LevelData>($"{Root}/ScriptableObjects/Levels/Level_Egypt_01.asset");
+            var ballPrefab = Load<GameObject>($"{Root}/Prefabs/Level/EnergyBall.prefab").GetComponent<EnergyBall>();
+            var slotPrefab = Load<GameObject>($"{Root}/Prefabs/UI/PartSlot.prefab").GetComponent<PartSlotUI>();
+            var gearCyan = ArtFactory.Get(ArtFactory.GearCyan);
+            var gearAmber = ArtFactory.Get(ArtFactory.GearAmber);
+            var glow = ArtFactory.Get(ArtFactory.Glow);
+            var square = ArtFactory.Get(ArtFactory.Square);
+            var rounded = ArtFactory.Get(ArtFactory.Rounded);
+            var matStatic = Load<PhysicsMaterial2D>($"{Root}/Physics/Static.physicsMaterial2D");
+            var matGear = Load<PhysicsMaterial2D>($"{Root}/Physics/Gear.physicsMaterial2D");
 
             // camera
             var camGo = new GameObject("Main Camera") { tag = "MainCamera" };
@@ -111,44 +96,60 @@ namespace ChronosRepairShop.EditorTools
             cam.orthographic = true;
             cam.orthographicSize = 7f;
             cam.clearFlags = CameraClearFlags.SolidColor;
-            cam.backgroundColor = new Color(0.10f, 0.08f, 0.14f);
+            cam.backgroundColor = new Color(0.03f, 0.04f, 0.09f);
             camGo.transform.position = new Vector3(0f, -1f, -10f);
 
             var es = new GameObject("EventSystem");
             es.AddComponent<EventSystem>();
             es.AddComponent<StandaloneInputModule>();
 
-            // decoration: clock face
-            var face = Sprite("ClockFace", square, new Vector3(0.2f, -0.5f), new Vector3(8f, 11f), new Color(0.35f, 0.27f, 0.12f, 0.35f), -20);
+            // backdrop + decor
+            SpriteGo("Backdrop", ArtFactory.Get(ArtFactory.Backdrop), new Vector3(0f, -1f), new Vector3(600f, 10.5f), Color.white, -100);
+            SpriteGo("ClockRing", ArtFactory.Get(ArtFactory.Ring), new Vector3(0.2f, -0.5f), Vector3.one * 10.5f, new Color(1f, 1f, 1f, 0.10f), -50);
+            var decoGear = SpriteGo("DecoGear", ArtFactory.Get(ArtFactory.GearSlate), new Vector3(-2.2f, 3.4f), Vector3.one * 3f, new Color(1f, 1f, 1f, 0.10f), -45);
+            decoGear.AddComponent<Spinner>().DegreesPerSecond = 6f;
+            var decoGear2 = SpriteGo("DecoGear2", ArtFactory.Get(ArtFactory.GearSlate), new Vector3(-0.35f, 5.3f), Vector3.one * 1.8f, new Color(1f, 1f, 1f, 0.10f), -45);
+            decoGear2.AddComponent<Spinner>().DegreesPerSecond = -10f;
 
             // static geometry
-            Box("WallLeft", square, new Vector2(-3.3f, -0.5f), new Vector2(0.2f, 15f), 0f, LStatic, matStatic, new Color(0.55f, 0.45f, 0.3f));
-            Box("WallRight", square, new Vector2(3.3f, -0.5f), new Vector2(0.2f, 15f), 0f, LStatic, matStatic, new Color(0.55f, 0.45f, 0.3f));
-            Box("Floor", square, new Vector2(0f, -4.9f), new Vector2(6.8f, 0.2f), -8f, LStatic, matStatic, new Color(0.55f, 0.45f, 0.3f));
+            var wall = new Color(0.17f, 0.21f, 0.38f);
+            BoxGo("WallLeft", square, new Vector2(-3.3f, -0.5f), new Vector2(0.2f, 15f), 0f, LStatic, matStatic, wall);
+            BoxGo("WallRight", square, new Vector2(3.3f, -0.5f), new Vector2(0.2f, 15f), 0f, LStatic, matStatic, wall);
+            BoxGo("Floor", square, new Vector2(0f, -4.9f), new Vector2(6.8f, 0.2f), -8f, LStatic, matStatic, wall);
 
             // placement zone
             var zone = new GameObject("PlacementZone") { layer = LayerMask.NameToLayer(LZone) };
             zone.transform.position = new Vector3(0.8f, 0.5f);
             zone.AddComponent<BoxCollider2D>().size = new Vector2(4.4f, 4f);
             zone.AddComponent<PlacementZone>();
-            Sprite("ZoneVisual", square, new Vector3(0.8f, 0.5f), new Vector3(4.4f, 4f), new Color(0.4f, 1f, 0.6f, 0.08f), -10);
+            var zv = SpriteGo("ZoneVisual", rounded, new Vector3(0.8f, 0.5f), Vector3.one, new Color(0.24f, 0.88f, 0.95f, 0.07f), -40);
+            var zsr = zv.GetComponent<SpriteRenderer>();
+            zsr.drawMode = SpriteDrawMode.Sliced;
+            zsr.size = new Vector2(4.4f, 4f);
 
-            // required gear
+            // required gear (cyan, glows when powered)
             var g0 = new GameObject("RequiredGear") { layer = LayerMask.NameToLayer(LGear) };
             g0.transform.position = new Vector3(1.5f, -2f);
             g0.transform.localScale = Vector3.one * 1.6f;
-            var sr = g0.AddComponent<SpriteRenderer>(); sr.sprite = gearSprite; sr.color = new Color(1f, 0.55f, 0.25f);
+            var sr = g0.AddComponent<SpriteRenderer>(); sr.sprite = gearCyan; sr.sortingOrder = 1;
             g0.AddComponent<Rigidbody2D>();
             var cc = g0.AddComponent<CircleCollider2D>(); cc.radius = 0.5f; cc.sharedMaterial = matGear;
             var gear0 = g0.AddComponent<Gear>();
+            var g0Glow = new GameObject("Glow");
+            g0Glow.transform.SetParent(g0.transform, false);
+            g0Glow.transform.localScale = Vector3.one * 1.7f;
+            var g0gsr = g0Glow.AddComponent<SpriteRenderer>(); g0gsr.sprite = glow; g0gsr.sortingOrder = 0; g0gsr.color = new Color(1, 1, 1, 0);
+            var g0v = g0.AddComponent<GearVisual>();
+            Ref(g0v, "glow", g0gsr);
+            Col(g0v, "glowColor", Cyan);
 
             // exit gate: trigger + solid door
             var gateGo = new GameObject("ExitGate") { layer = LayerMask.NameToLayer(LStatic) };
             gateGo.transform.position = new Vector3(3.0f, -4.6f);
             var gt = gateGo.AddComponent<BoxCollider2D>(); gt.isTrigger = true; gt.size = new Vector2(0.5f, 1.8f);
             var gate = gateGo.AddComponent<ExitGate>();
-            Sprite("GateGlow", square, gateGo.transform.position, new Vector3(0.5f, 1.8f), new Color(0.3f, 1f, 0.5f, 0.35f), -5);
-            var door = Box("GateDoor", square, new Vector2(2.7f, -4.6f), new Vector2(0.2f, 2.0f), 0f, LStatic, matStatic, new Color(0.9f, 0.25f, 0.25f));
+            SpriteGo("GateGlow", glow, gateGo.transform.position, new Vector3(1.6f, 3.2f, 1f), new Color(0.24f, 0.88f, 0.95f, 0.45f), -5);
+            var door = BoxGo("GateDoor", square, new Vector2(2.7f, -4.6f), new Vector2(0.2f, 2.0f), 0f, LStatic, matStatic, Magenta, 2);
 
             var mech = new GameObject("ClockMechanism").AddComponent<ClockMechanism>();
             Ref(mech, "gate", gate);
@@ -161,14 +162,16 @@ namespace ChronosRepairShop.EditorTools
             leak.AddComponent<BoxCollider2D>().size = new Vector2(10f, 2f);
             leak.AddComponent<LeakZone>();
 
-            // hint: ghost gears show roughly where the two gears go
-            Sprite("HintGearA", gearSprite, new Vector3(0.5f, 0f), Vector3.one * 1.2f, new Color(1f, 1f, 1f, 0.22f), -4);
-            Sprite("HintGearB", gearSprite, new Vector3(1.5f, -0.5f), Vector3.one * 1.2f, new Color(1f, 1f, 1f, 0.22f), -4);
+            // hint ghosts: roughly where the two gears go
+            var hA = SpriteGo("HintGearA", gearAmber, new Vector3(0.5f, 0f), Vector3.one * 1.2f, new Color(1f, 1f, 1f, 0.2f), -30);
+            hA.AddComponent<Spinner>().DegreesPerSecond = 20f;
+            var hB = SpriteGo("HintGearB", gearAmber, new Vector3(1.5f, -0.5f), Vector3.one * 1.2f, new Color(1f, 1f, 1f, 0.2f), -30);
+            hB.AddComponent<Spinner>().DegreesPerSecond = -20f;
 
             // ball spawn
             var spawn = new GameObject("BallSpawn");
             spawn.transform.position = new Vector3(0.2f, 5.2f);
-            Sprite("SpawnMarker", gearSprite, spawn.transform.position, Vector3.one * 0.5f, new Color(1f, 1f, 1f, 0.3f), -5);
+            SpriteGo("SpawnMarker", glow, spawn.transform.position, Vector3.one * 0.9f, new Color(0.24f, 0.88f, 0.95f, 0.35f), -5);
 
             // controllers
             var placementGo = new GameObject("Placement");
@@ -187,81 +190,75 @@ namespace ChronosRepairShop.EditorTools
             Ref(lc, "gate", gate);
             Ref(lc, "placement", placement);
 
-            BuildUI(lc, placement, slotPrefab);
+            BuildUI(lc, placement, slotPrefab, rounded, square);
 
-            var path = $"{Root}/Scenes/{SceneName}.unity";
-            EditorSceneManager.SaveScene(scene, path);
-            EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(path, true) };
+            Directory.CreateDirectory(Root + "/Scenes");
+            EditorSceneManager.SaveScene(scene, ScenePath);
+            AddSceneToBuild(ScenePath, false);
         }
 
-        static void BuildUI(LevelController lc, PlacementController placement, PartSlotUI slotPrefab)
+        static void BuildUI(LevelController lc, PlacementController placement, PartSlotUI slotPrefab, Sprite rounded, Sprite square)
         {
-            var res = new DefaultControls.Resources
-            {
-                standard = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/UISprite.psd"),
-                background = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/Background.psd"),
-                knob = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/Knob.psd"),
-                checkmark = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/Checkmark.psd"),
-            };
-
-            var canvasGo = new GameObject("Canvas");
-            var canvas = canvasGo.AddComponent<Canvas>();
-            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            var scaler = canvasGo.AddComponent<CanvasScaler>();
-            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = new Vector2(1080, 1920);
-            scaler.matchWidthOrHeight = 0.5f;
-            canvasGo.AddComponent<GraphicRaycaster>();
-            var cr = canvasGo.transform;
+            var res = UiResources();
+            var canvasGo = Canvas("Canvas", out var cr);
 
             // darkness overlay (never blocks input)
-            var overlay = DefaultControls.CreatePanel(res);
-            overlay.name = "DarknessOverlay"; overlay.transform.SetParent(cr, false);
-            Stretch(overlay);
-            var oi = overlay.GetComponent<Image>(); oi.color = new Color(0, 0, 0, 0); oi.raycastTarget = false;
+            var overlay = Panel(res, cr, "DarknessOverlay", null, new Color(0, 0, 0, 0), Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
+            overlay.GetComponent<Image>().raycastTarget = false;
+            var oi = overlay.GetComponent<Image>();
 
-            var title = Label(res, cr, "LevelTitle", "", 56, TextAnchor.UpperLeft, new Vector2(0, 1), new Vector2(0.7f, 1), new Vector2(30, -120), new Vector2(0, -30));
-            var phase = Label(res, cr, "PhaseLabel", "", 44, TextAnchor.UpperLeft, new Vector2(0, 1), new Vector2(0.7f, 1), new Vector2(30, -200), new Vector2(0, -120));
-            var timer = Label(res, cr, "Timer", "", 96, TextAnchor.UpperRight, new Vector2(0.6f, 1), new Vector2(1, 1), new Vector2(0, -200), new Vector2(-30, -20));
+            var menu = Button(res, cr, "MenuButton", "MENÜ", rounded, Slate, Color.white, 36,
+                new Vector2(0, 1), new Vector2(0, 1), new Vector2(30, -130), new Vector2(230, -40));
+            var title = Label(res, cr, "LevelTitle", "", 48, TextAnchor.MiddleCenter, Color.white,
+                new Vector2(0.25f, 1), new Vector2(0.75f, 1), new Vector2(0, -130), new Vector2(0, -40));
+            var phase = Label(res, cr, "PhaseLabel", "", 36, TextAnchor.MiddleCenter, new Color(0.6f, 0.7f, 0.85f),
+                new Vector2(0.25f, 1), new Vector2(0.75f, 1), new Vector2(0, -190), new Vector2(0, -130));
+            var timer = Label(res, cr, "Timer", "", 84, TextAnchor.MiddleRight, Cyan,
+                new Vector2(0.72f, 1), new Vector2(1, 1), new Vector2(0, -150), new Vector2(-30, -20));
 
             var sliderGo = DefaultControls.CreateSlider(res);
             sliderGo.name = "DarknessBar"; sliderGo.transform.SetParent(cr, false);
             Place(sliderGo, new Vector2(0, 1), new Vector2(1, 1), new Vector2(40, -250), new Vector2(-40, -215));
             var slider = sliderGo.GetComponent<Slider>(); slider.interactable = false; slider.value = 0;
+            StyleSlider(slider, rounded, new Color(1, 1, 1, 0.08f), Amber);
 
             // bottom placement bar
-            var bar = DefaultControls.CreatePanel(res);
-            bar.name = "PlacementUI"; bar.transform.SetParent(cr, false);
-            Place(bar, new Vector2(0, 0), new Vector2(1, 0), new Vector2(0, 0), new Vector2(0, 430));
-            bar.GetComponent<Image>().color = new Color(0.05f, 0.04f, 0.08f, 0.85f);
+            var bar = Panel(res, cr, "PlacementUI", rounded, new Color(0.04f, 0.05f, 0.10f, 0.88f),
+                new Vector2(0, 0), new Vector2(1, 0), new Vector2(20, 20), new Vector2(-20, 450));
 
             var slotRoot = new GameObject("Slots", typeof(RectTransform));
             slotRoot.transform.SetParent(bar.transform, false);
-            Place(slotRoot, new Vector2(0, 0), new Vector2(1, 1), new Vector2(20, 160), new Vector2(-20, -15));
+            Place(slotRoot, Vector2.zero, Vector2.one, new Vector2(20, 170), new Vector2(-20, -15));
             var hl = slotRoot.AddComponent<HorizontalLayoutGroup>();
             hl.childAlignment = TextAnchor.MiddleCenter; hl.spacing = 40;
             hl.childControlWidth = false; hl.childControlHeight = false;
 
-            var rotL = Btn(res, bar.transform, "RotateLeft", "Döndür -", new Vector2(0.02f, 0), new Vector2(0.30f, 0), new Vector2(0, 15), new Vector2(0, 140));
-            var start = Btn(res, bar.transform, "Start", "BAŞLAT", new Vector2(0.34f, 0), new Vector2(0.66f, 0), new Vector2(0, 15), new Vector2(0, 140));
-            var rotR = Btn(res, bar.transform, "RotateRight", "Döndür +", new Vector2(0.70f, 0), new Vector2(0.98f, 0), new Vector2(0, 15), new Vector2(0, 140));
-            start.GetComponent<Image>().color = new Color(0.4f, 0.9f, 0.5f);
+            var rotL = Button(res, bar.transform, "RotateLeft", "DÖNDÜR -", rounded, Slate, Color.white, 38,
+                new Vector2(0.03f, 0), new Vector2(0.30f, 0), new Vector2(0, 20), new Vector2(0, 150));
+            var start = Button(res, bar.transform, "Start", "BAŞLAT", rounded, Cyan, Ink, 50,
+                new Vector2(0.34f, 0), new Vector2(0.66f, 0), new Vector2(0, 20), new Vector2(0, 150));
+            var rotR = Button(res, bar.transform, "RotateRight", "DÖNDÜR +", rounded, Slate, Color.white, 38,
+                new Vector2(0.70f, 0), new Vector2(0.97f, 0), new Vector2(0, 20), new Vector2(0, 150));
 
-            // result panel
+            // result panel: dim backdrop + card
             var resultGo = new GameObject("ResultPanel", typeof(RectTransform));
             resultGo.transform.SetParent(cr, false);
             Stretch(resultGo);
-            var panel = DefaultControls.CreatePanel(res);
-            panel.name = "Root"; panel.transform.SetParent(resultGo.transform, false);
-            Stretch(panel);
-            panel.GetComponent<Image>().color = new Color(0, 0, 0, 0.8f);
-            var rTitle = Label(res, panel.transform, "Title", "", 90, TextAnchor.MiddleCenter, new Vector2(0, 0.7f), new Vector2(1, 0.8f), Vector2.zero, Vector2.zero);
-            var rStars = Label(res, panel.transform, "Stars", "", 60, TextAnchor.MiddleCenter, new Vector2(0, 0.62f), new Vector2(1, 0.7f), Vector2.zero, Vector2.zero);
-            var rBody = Label(res, panel.transform, "Body", "", 48, TextAnchor.UpperCenter, new Vector2(0.08f, 0.38f), new Vector2(0.92f, 0.6f), Vector2.zero, Vector2.zero);
-            var rRetry = Btn(res, panel.transform, "Retry", "Tekrar", new Vector2(0.08f, 0.2f), new Vector2(0.48f, 0.2f), new Vector2(0, 0), new Vector2(0, 150));
-            var rNext = Btn(res, panel.transform, "Next", "Sonraki", new Vector2(0.52f, 0.2f), new Vector2(0.92f, 0.2f), new Vector2(0, 0), new Vector2(0, 150));
+            var dim = Panel(res, resultGo.transform, "Root", null, new Color(0, 0, 0, 0.75f), Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
+            var card = Panel(res, dim.transform, "Card", rounded, new Color(0.08f, 0.10f, 0.18f, 0.98f),
+                new Vector2(0.06f, 0.25f), new Vector2(0.94f, 0.78f), Vector2.zero, Vector2.zero);
+            var rTitle = Label(res, card.transform, "Title", "", 80, TextAnchor.MiddleCenter, Amber,
+                new Vector2(0, 0.78f), new Vector2(1, 0.95f), Vector2.zero, Vector2.zero);
+            var rStars = Label(res, card.transform, "Stars", "", 48, TextAnchor.MiddleCenter, Cyan,
+                new Vector2(0, 0.68f), new Vector2(1, 0.78f), Vector2.zero, Vector2.zero);
+            var rBody = Label(res, card.transform, "Body", "", 42, TextAnchor.UpperCenter, new Color(0.85f, 0.9f, 1f),
+                new Vector2(0.08f, 0.27f), new Vector2(0.92f, 0.66f), Vector2.zero, Vector2.zero);
+            var rRetry = Button(res, card.transform, "Retry", "TEKRAR", rounded, Slate, Color.white, 44,
+                new Vector2(0.06f, 0.06f), new Vector2(0.48f, 0.06f), new Vector2(0, 0), new Vector2(0, 140));
+            var rNext = Button(res, card.transform, "Next", "SONRAKİ", rounded, Cyan, Ink, 44,
+                new Vector2(0.52f, 0.06f), new Vector2(0.94f, 0.06f), new Vector2(0, 0), new Vector2(0, 140));
             var result = resultGo.AddComponent<ResultPanel>();
-            Ref(result, "root", panel);
+            Ref(result, "root", dim);
             Ref(result, "titleLabel", rTitle.GetComponent<Text>());
             Ref(result, "bodyLabel", rBody.GetComponent<Text>());
             Ref(result, "starsLabel", rStars.GetComponent<Text>());
@@ -280,61 +277,82 @@ namespace ChronosRepairShop.EditorTools
             Ref(hud, "startButton", start.GetComponent<Button>());
             Ref(hud, "rotateLeftButton", rotL.GetComponent<Button>());
             Ref(hud, "rotateRightButton", rotR.GetComponent<Button>());
+            Ref(hud, "menuButton", menu.GetComponent<Button>());
             Ref(hud, "placementUI", bar);
             Ref(hud, "slotRoot", slotRoot.transform);
             Ref(hud, "slotPrefab", slotPrefab);
+            Ref(hud, "slotSprite", rounded);
         }
 
         // ------------------------------------------------------------------ prefabs
-        static EnergyBall MakeBallPrefab(Sprite sprite, PhysicsMaterial2D mat)
+        static void MakeBallPrefab(Sprite sprite, PhysicsMaterial2D mat, Material trailMat)
         {
             var go = new GameObject("EnergyBall") { layer = LayerMask.NameToLayer(LBall) };
-            go.transform.localScale = Vector3.one * 0.4f;
-            go.AddComponent<SpriteRenderer>().sprite = sprite;
+            go.transform.localScale = Vector3.one * 0.6f;
+            var sr = go.AddComponent<SpriteRenderer>(); sr.sprite = sprite; sr.sortingOrder = 5;
             var rb = go.AddComponent<Rigidbody2D>();
             rb.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
             rb.interpolation = RigidbodyInterpolation2D.Interpolate;
-            var c = go.AddComponent<CircleCollider2D>(); c.radius = 0.5f; c.sharedMaterial = mat;
+            var c = go.AddComponent<CircleCollider2D>(); c.radius = 0.3333f; c.sharedMaterial = mat;   // 0.2 world units
             go.AddComponent<EnergyBall>();
-            return SavePrefab(go, "Level/EnergyBall").GetComponent<EnergyBall>();
+
+            var tr = go.AddComponent<TrailRenderer>();
+            tr.time = 0.45f;
+            tr.minVertexDistance = 0.05f;
+            tr.widthMultiplier = 0.3f;
+            tr.widthCurve = AnimationCurve.Linear(0f, 1f, 1f, 0f);
+            tr.numCapVertices = 4;
+            tr.sortingOrder = 4;
+            tr.sharedMaterial = trailMat;
+            var g = new Gradient();
+            g.SetKeys(new[] { new GradientColorKey(Cyan, 0f), new GradientColorKey(new Color(0.3f, 0.4f, 1f), 1f) },
+                      new[] { new GradientAlphaKey(0.9f, 0f), new GradientAlphaKey(0f, 1f) });
+            tr.colorGradient = g;
+            SavePrefab(go, "Level/EnergyBall");
         }
 
-        static PlaceablePart MakeGearPrefab(Sprite sprite, PhysicsMaterial2D mat, float radius, string name)
+        static void MakeGearPrefab(Sprite sprite, Sprite glow, PhysicsMaterial2D mat, float radius, string name)
         {
             var go = new GameObject(name) { layer = LayerMask.NameToLayer(LGear) };
             go.transform.localScale = Vector3.one * radius * 2f;
-            go.AddComponent<SpriteRenderer>().sprite = sprite;
+            var sr = go.AddComponent<SpriteRenderer>(); sr.sprite = sprite; sr.sortingOrder = 1;
             go.AddComponent<Rigidbody2D>();
             var c = go.AddComponent<CircleCollider2D>(); c.radius = 0.5f; c.sharedMaterial = mat;
             go.AddComponent<PlaceablePart>();
             go.AddComponent<Gear>();
-            return SavePrefab(go, "Parts/" + name).GetComponent<PlaceablePart>();
+
+            var g = new GameObject("Glow");
+            g.transform.SetParent(go.transform, false);
+            g.transform.localScale = Vector3.one * 1.7f;
+            var gsr = g.AddComponent<SpriteRenderer>(); gsr.sprite = glow; gsr.sortingOrder = 0; gsr.color = new Color(1, 1, 1, 0);
+            var gv = go.AddComponent<GearVisual>();
+            Ref(gv, "glow", gsr);
+            Col(gv, "glowColor", Amber);
+            SavePrefab(go, "Parts/" + name);
         }
 
-        static PlaceablePart MakeMirrorPrefab(Sprite sprite, PhysicsMaterial2D mat)
+        static void MakeMirrorPrefab(Sprite sprite, PhysicsMaterial2D mat)
         {
             var go = new GameObject("Part_Mirror") { layer = LayerMask.NameToLayer(LParts) };
             go.transform.localScale = new Vector3(1.4f, 0.15f, 1f);
-            go.AddComponent<SpriteRenderer>().sprite = sprite;
+            var sr = go.AddComponent<SpriteRenderer>(); sr.sprite = sprite; sr.sortingOrder = 1;
             go.AddComponent<Rigidbody2D>();
             var c = go.AddComponent<BoxCollider2D>(); c.size = Vector2.one; c.sharedMaterial = mat;
             go.AddComponent<PlaceablePart>();
             go.AddComponent<Deflector>();
-            return SavePrefab(go, "Parts/Part_Mirror").GetComponent<PlaceablePart>();
+            SavePrefab(go, "Parts/Part_Mirror");
         }
 
-        static PartSlotUI MakeSlotPrefab()
+        static void MakeSlotPrefab(Sprite rounded)
         {
             var go = new GameObject("PartSlot", typeof(RectTransform), typeof(CanvasGroup));
             ((RectTransform)go.transform).sizeDelta = new Vector2(220, 220);
             var bg = go.AddComponent<Image>();
-            bg.sprite = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/UISprite.psd");
-            bg.type = Image.Type.Sliced;
-            bg.color = new Color(0.25f, 0.2f, 0.35f);
+            bg.sprite = rounded; bg.type = Image.Type.Sliced; bg.color = Slate;
 
             var icon = new GameObject("Icon", typeof(RectTransform), typeof(Image));
             icon.transform.SetParent(go.transform, false);
-            Place(icon, Vector2.zero, Vector2.one, new Vector2(25, 40), new Vector2(-25, -20));
+            Place(icon, Vector2.zero, Vector2.one, new Vector2(25, 50), new Vector2(-25, -20));
             icon.GetComponent<Image>().preserveAspect = true;
             icon.GetComponent<Image>().raycastTarget = false;
 
@@ -343,21 +361,22 @@ namespace ChronosRepairShop.EditorTools
             Place(count, new Vector2(0, 0), new Vector2(1, 0), new Vector2(0, 0), new Vector2(0, 50));
             var t = count.GetComponent<Text>();
             t.alignment = TextAnchor.MiddleCenter; t.fontSize = 40; t.color = Color.white; t.raycastTarget = false;
+            t.fontStyle = FontStyle.Bold;
             t.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
 
             var slot = go.AddComponent<PartSlotUI>();
             Ref(slot, "icon", icon.GetComponent<Image>());
             Ref(slot, "countLabel", t);
             Ref(slot, "group", go.GetComponent<CanvasGroup>());
-            return SavePrefab(go, "UI/PartSlot").GetComponent<PartSlotUI>();
+            SavePrefab(go, "UI/PartSlot");
         }
 
-        static GameObject SavePrefab(GameObject go, string relPath)
+        static void SavePrefab(GameObject go, string relPath)
         {
             var path = $"{Root}/Prefabs/{relPath}.prefab";
-            var asset = PrefabUtility.SaveAsPrefabAsset(go, path);
+            Directory.CreateDirectory(Path.GetDirectoryName(path));
+            PrefabUtility.SaveAsPrefabAsset(go, path);
             Object.DestroyImmediate(go);
-            return asset;
         }
 
         static PartDefinition MakePart(string file, string display, PartKind kind, Sprite icon, PlaceablePart prefab, float step)
@@ -366,88 +385,6 @@ namespace ChronosRepairShop.EditorTools
             d.displayName = display; d.kind = kind; d.icon = icon; d.prefab = prefab; d.rotationStep = step; d.canRotate = true;
             EditorUtility.SetDirty(d);
             return d;
-        }
-
-        // ------------------------------------------------------------------ scene helpers
-        static GameObject Sprite(string name, Sprite s, Vector3 pos, Vector3 scale, Color color, int order)
-        {
-            var go = new GameObject(name);
-            go.transform.position = pos; go.transform.localScale = scale;
-            var sr = go.AddComponent<SpriteRenderer>(); sr.sprite = s; sr.color = color; sr.sortingOrder = order;
-            return go;
-        }
-
-        static GameObject Box(string name, Sprite s, Vector2 pos, Vector2 size, float angle, string layer, PhysicsMaterial2D mat, Color color)
-        {
-            var go = Sprite(name, s, pos, new Vector3(size.x, size.y, 1f), color, 0);
-            go.transform.rotation = Quaternion.Euler(0, 0, angle);
-            go.layer = LayerMask.NameToLayer(layer);
-            var c = go.AddComponent<BoxCollider2D>(); c.size = Vector2.one; c.sharedMaterial = mat;
-            return go;
-        }
-
-        // ------------------------------------------------------------------ UI helpers
-        static void Place(GameObject go, Vector2 aMin, Vector2 aMax, Vector2 oMin, Vector2 oMax)
-        {
-            var rt = (RectTransform)go.transform;
-            rt.anchorMin = aMin; rt.anchorMax = aMax; rt.offsetMin = oMin; rt.offsetMax = oMax;
-        }
-
-        static void Stretch(GameObject go) => Place(go, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
-
-        static GameObject Label(DefaultControls.Resources res, Transform parent, string name, string text, int size, TextAnchor anchor,
-                                Vector2 aMin, Vector2 aMax, Vector2 oMin, Vector2 oMax)
-        {
-            var go = DefaultControls.CreateText(res);
-            go.name = name; go.transform.SetParent(parent, false);
-            var t = go.GetComponent<Text>();
-            t.text = text; t.fontSize = size; t.alignment = anchor; t.color = Color.white; t.raycastTarget = false;
-            t.horizontalOverflow = HorizontalWrapMode.Wrap; t.verticalOverflow = VerticalWrapMode.Overflow;
-            Place(go, aMin, aMax, oMin, oMax);
-            return go;
-        }
-
-        static GameObject Btn(DefaultControls.Resources res, Transform parent, string name, string text,
-                              Vector2 aMin, Vector2 aMax, Vector2 oMin, Vector2 oMax)
-        {
-            var go = DefaultControls.CreateButton(res);
-            go.name = name; go.transform.SetParent(parent, false);
-            var t = go.GetComponentInChildren<Text>(); t.text = text; t.fontSize = 44;
-            Place(go, aMin, aMax, oMin, oMax);
-            return go;
-        }
-
-        // ------------------------------------------------------------------ serialization helpers
-        static void Edit(Object target, string field, System.Action<SerializedProperty> set)
-        {
-            var so = new SerializedObject(target);
-            var p = so.FindProperty(field);
-            if (p == null) { Debug.LogError($"Field '{field}' not found on {target.GetType().Name}"); return; }
-            set(p);
-            so.ApplyModifiedPropertiesWithoutUndo();
-        }
-        static void Ref(Object t, string f, Object v)
-        {
-            if (!v) Debug.LogError($"Chronos build: value for '{f}' on {t.GetType().Name} is null");
-            Edit(t, f, p =>
-            {
-                p.objectReferenceValue = v;
-                if (v && !p.objectReferenceValue) Debug.LogError($"Chronos build: could not assign '{f}' on {t.GetType().Name} ({v.GetType().Name} '{v.name}')");
-            });
-        }
-        static void Int(Object t, string f, int v) => Edit(t, f, p => p.intValue = v);
-        static void Float(Object t, string f, float v) => Edit(t, f, p => p.floatValue = v);
-        static void RefList(Object t, string f, params Object[] v) => Edit(t, f, p =>
-        {
-            p.arraySize = v.Length;
-            for (int i = 0; i < v.Length; i++) p.GetArrayElementAtIndex(i).objectReferenceValue = v[i];
-        });
-
-        static int Mask(params string[] layers)
-        {
-            int m = 0;
-            foreach (var l in layers) m |= 1 << LayerMask.NameToLayer(l);
-            return m;
         }
 
         // ------------------------------------------------------------------ project setup
@@ -481,76 +418,19 @@ namespace ChronosRepairShop.EditorTools
                 Physics2D.IgnoreLayerCollision(LayerMask.NameToLayer(LBall), LayerMask.NameToLayer(other), false);
         }
 
-        static T LoadOrCreate<T>(string path) where T : ScriptableObject
-        {
-            Directory.CreateDirectory(Path.GetDirectoryName(path));
-            var a = AssetDatabase.LoadAssetAtPath<T>(path);
-            if (a) return a;
-            a = ScriptableObject.CreateInstance<T>();
-            AssetDatabase.CreateAsset(a, path);
-            return a;
-        }
-
         static PhysicsMaterial2D MakeMaterial(string name, float bounciness, float friction)
         {
-            var m = LoadOrCreate2D($"{Root}/Physics/{name}.physicsMaterial2D");
+            var path = $"{Root}/Physics/{name}.physicsMaterial2D";
+            var m = AssetDatabase.LoadAssetAtPath<PhysicsMaterial2D>(path);
+            if (!m)
+            {
+                Directory.CreateDirectory($"{Root}/Physics");
+                m = new PhysicsMaterial2D();
+                AssetDatabase.CreateAsset(m, path);
+            }
             m.bounciness = bounciness; m.friction = friction;
             EditorUtility.SetDirty(m);
             return m;
-        }
-
-        static PhysicsMaterial2D LoadOrCreate2D(string path)
-        {
-            var m = AssetDatabase.LoadAssetAtPath<PhysicsMaterial2D>(path);
-            if (m) return m;
-            m = new PhysicsMaterial2D();
-            AssetDatabase.CreateAsset(m, path);
-            return m;
-        }
-
-        // ------------------------------------------------------------------ procedural sprites
-        delegate Color32 PixelFn(int x, int y, int w, int h);
-
-        static Sprite MakeSprite(string name, int w, int h, int ppu, PixelFn fn)
-        {
-            var path = $"{Root}/Art/{name}.png";
-            var tex = new Texture2D(w, h, TextureFormat.RGBA32, false);
-            var px = new Color32[w * h];
-            for (int y = 0; y < h; y++)
-                for (int x = 0; x < w; x++) px[y * w + x] = fn(x, y, w, h);
-            tex.SetPixels32(px);
-            File.WriteAllBytes(path, tex.EncodeToPNG());
-            Object.DestroyImmediate(tex);
-            AssetDatabase.ImportAsset(path);
-            var imp = (TextureImporter)AssetImporter.GetAtPath(path);
-            imp.textureType = TextureImporterType.Sprite;
-            imp.spritePixelsPerUnit = ppu;
-            imp.mipmapEnabled = false;
-            imp.alphaIsTransparency = true;
-            imp.SaveAndReimport();
-            return AssetDatabase.LoadAssetAtPath<Sprite>(path);
-        }
-
-        static Color32 GearPixels(int x, int y, int w, int h)
-        {
-            float cx = (w - 1) * 0.5f, cy = (h - 1) * 0.5f, R = w * 0.5f - 1f;
-            float dx = x - cx, dy = y - cy, r = Mathf.Sqrt(dx * dx + dy * dy);
-            float theta = Mathf.Atan2(dy, dx);
-            float outer = R * (0.82f + (Mathf.Sin(12f * theta) > 0f ? 0.18f : 0f));
-            float a = Mathf.Clamp01(outer - r + 0.5f);
-            if (r < R * 0.14f) a = 0f;                       // axle hole
-            bool ring = r < outer * 0.72f && r > outer * 0.62f;
-            var c = ring ? new Color(0.55f, 0.38f, 0.1f) : new Color(0.9f, 0.7f, 0.25f);
-            return new Color(c.r, c.g, c.b, a);
-        }
-
-        static Color32 BallPixels(int x, int y, int w, int h)
-        {
-            float cx = (w - 1) * 0.5f, cy = (h - 1) * 0.5f, R = w * 0.5f - 1f;
-            float r = Mathf.Sqrt((x - cx) * (x - cx) + (y - cy) * (y - cy));
-            float a = Mathf.Clamp01(R - r + 0.5f);
-            float glow = 1f - r / R;
-            return new Color(0.4f + 0.6f * glow, 0.9f, 1f, a);
         }
     }
 }

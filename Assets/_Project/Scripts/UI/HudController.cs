@@ -19,11 +19,13 @@ namespace ChronosRepairShop
         [SerializeField] Button startButton;
         [SerializeField] Button rotateLeftButton;
         [SerializeField] Button rotateRightButton;
+        [SerializeField] Button menuButton;
         [SerializeField] GameObject placementUI;
 
         [Header("Parts bar")]
         [SerializeField] Transform slotRoot;
         [SerializeField] PartSlotUI slotPrefab;
+        [SerializeField] Sprite slotSprite;      // used when slots are built in code
 
         void Start()
         {
@@ -32,11 +34,12 @@ namespace ChronosRepairShop
 
             foreach (var def in level.Inventory.Parts)
             {
-                var slot = slotPrefab ? Instantiate(slotPrefab, slotRoot) : PartSlotUI.CreateDefault(slotRoot);
+                var slot = slotPrefab ? Instantiate(slotPrefab, slotRoot) : PartSlotUI.CreateDefault(slotRoot, slotSprite);
                 slot.Setup(def, level.Inventory, placement);
             }
 
             startButton.onClick.AddListener(level.StartRun);
+            if (menuButton) menuButton.onClick.AddListener(GameManager.Instance.LoadMenu);
             rotateLeftButton.onClick.AddListener(() => placement.RotateSelected(1));
             rotateRightButton.onClick.AddListener(() => placement.RotateSelected(-1));
 

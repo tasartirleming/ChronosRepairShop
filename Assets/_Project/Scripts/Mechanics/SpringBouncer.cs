@@ -8,12 +8,16 @@ namespace ChronosRepairShop
     {
         [SerializeField] float launchSpeed = 12f;
         [Range(0f, 1f)] [SerializeField] float keepSideways = 0.4f;
+        [Tooltip("Launch only once per run; afterwards it is a plain solid pad.")]
+        [SerializeField] bool singleUse = false;
         [SerializeField] UnityEvent onBounce;
+
+        bool used;
 
         void OnCollisionEnter2D(Collision2D c)
         {
             var ball = c.collider.GetComponent<EnergyBall>();
-            if (!ball) return;
+            if (!ball || used) return;
 
             // Only the pad face launches; hitting the back or sides is a plain collision.
             Vector2 local = transform.InverseTransformPoint(ball.transform.position);
@@ -23,6 +27,7 @@ namespace ChronosRepairShop
             Vector2 right = transform.right;
             Vector2 sideways = Vector2.Dot(ball.PreviousVelocity, right) * right;
             ball.Body.linearVelocity = up * launchSpeed + sideways * keepSideways;
+            if (singleUse) used = true;
             onBounce?.Invoke();
         }
     }

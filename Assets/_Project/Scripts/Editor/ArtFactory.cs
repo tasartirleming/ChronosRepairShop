@@ -17,6 +17,7 @@ namespace ChronosRepairShop.EditorTools
         public const string Square = "Square";
         public const string Rounded = "Rounded";
         public const string Mirror = "Mirror";
+        public const string Spring = "SpringPad";
 
         delegate Color32 PixelFn(int x, int y, int w, int h);
 
@@ -35,6 +36,7 @@ namespace ChronosRepairShop.EditorTools
             Make(Square, 4, 4, 4, (x, y, w, h) => new Color32(255, 255, 255, 255), point: true);
             Make(Mirror, 4, 4, 4, (x, y, w, h) => new Color32(150, 235, 255, 245), point: true);
             Make(Rounded, 64, 64, 64, RoundedPixels, border: 24);
+            Make(Spring, 64, 32, 64, SpringPixels);
         }
 
         public static Material TrailMaterial()
@@ -142,6 +144,20 @@ namespace ChronosRepairShop.EditorTools
             Color top = new Color(0.10f, 0.12f, 0.24f);
             Color bottom = new Color(0.03f, 0.04f, 0.09f);
             return Color.Lerp(bottom, top, t);
+        }
+
+        // Magenta pad with a white chevron pointing along the launch direction (+Y).
+        static Color32 SpringPixels(int x, int y, int w, int h)
+        {
+            float px = Mathf.Abs(x - (w - 1) * 0.5f) - ((w - 1) * 0.5f - 10f);
+            float py = Mathf.Abs(y - (h - 1) * 0.5f) - ((h - 1) * 0.5f - 10f);
+            float d = Mathf.Sqrt(Mathf.Max(px, 0f) * Mathf.Max(px, 0f) + Mathf.Max(py, 0f) * Mathf.Max(py, 0f)) - 10f;
+            float a = Mathf.Clamp01(0.5f - d);
+            Color col = Color.Lerp(new Color(0.85f, 0.2f, 0.45f), new Color(1f, 0.45f, 0.65f), y / (float)(h - 1));
+            float line = 22f - Mathf.Abs(x - (w - 1) * 0.5f) * 0.8f;
+            float chev = Mathf.Clamp01(1.6f - Mathf.Abs(y - line)) * (Mathf.Abs(x - (w - 1) * 0.5f) < 14f ? 1f : 0f);
+            col = Color.Lerp(col, Color.white, chev * 0.9f);
+            return new Color(col.r, col.g, col.b, a);
         }
 
         static Color32 RoundedPixels(int x, int y, int w, int h)

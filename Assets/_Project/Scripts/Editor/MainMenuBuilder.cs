@@ -15,6 +15,11 @@ namespace ChronosRepairShop.EditorTools
         [MenuItem("Chronos/Build Main Menu")]
         public static void Build()
         {
+            if (EditorApplication.isPlaying || EditorApplication.isPlayingOrWillChangePlaymode)
+            {
+                EditorUtility.DisplayDialog("Chronos", "Önce Play modundan çıkın (■ tuşu), sonra bu menüyü çalıştırın.", "Tamam");
+                return;
+            }
             ArtFactory.EnsureAll();
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();

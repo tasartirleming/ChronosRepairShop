@@ -31,7 +31,10 @@ namespace ChronosRepairShop
             levelTitle.text = level.Level.displayName;
 
             foreach (var def in level.Inventory.Parts)
-                Instantiate(slotPrefab, slotRoot).Setup(def, level.Inventory, placement);
+            {
+                var slot = slotPrefab ? Instantiate(slotPrefab, slotRoot) : PartSlotUI.CreateDefault(slotRoot);
+                slot.Setup(def, level.Inventory, placement);
+            }
 
             startButton.onClick.AddListener(level.StartRun);
             rotateLeftButton.onClick.AddListener(() => placement.RotateSelected(1));
@@ -50,7 +53,7 @@ namespace ChronosRepairShop
             Need(levelTitle, "levelTitle"); Need(phaseLabel, "phaseLabel"); Need(timerLabel, "timerLabel");
             Need(darknessBar, "darknessBar"); Need(startButton, "startButton");
             Need(rotateLeftButton, "rotateLeftButton"); Need(rotateRightButton, "rotateRightButton");
-            Need(placementUI, "placementUI"); Need(slotRoot, "slotRoot"); Need(slotPrefab, "slotPrefab");
+            Need(placementUI, "placementUI"); Need(slotRoot, "slotRoot");
             if (ok && level.Level == null) { Debug.LogError("HudController: LevelController has no LevelData (assign fallbackLevel).", this); ok = false; }
             return ok;
         }

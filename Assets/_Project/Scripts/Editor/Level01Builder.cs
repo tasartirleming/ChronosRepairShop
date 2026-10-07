@@ -59,7 +59,7 @@ namespace ChronosRepairShop.EditorTools
                 new PartAllotment { part = mirrorDef, count = 1 },
             };
             level.placementTimeLimit = 60f;
-            level.runTimeLimit = 20f;
+            level.runTimeLimit = 30f;
             level.rules = new EraRules();
             level.storyFragment = "Kum saatinin ilk çarkı yeniden dönüyor. Nil kıyısında zaman, uzun bir uykudan sonra derin bir nefes aldı.";
             EditorUtility.SetDirty(level);
@@ -124,7 +124,7 @@ namespace ChronosRepairShop.EditorTools
             // static geometry
             Box("WallLeft", square, new Vector2(-3.3f, -0.5f), new Vector2(0.2f, 15f), 0f, LStatic, matStatic, new Color(0.55f, 0.45f, 0.3f));
             Box("WallRight", square, new Vector2(3.3f, -0.5f), new Vector2(0.2f, 15f), 0f, LStatic, matStatic, new Color(0.55f, 0.45f, 0.3f));
-            Box("Floor", square, new Vector2(1.9f, -4.9f), new Vector2(2.6f, 0.2f), -6f, LStatic, matStatic, new Color(0.55f, 0.45f, 0.3f));
+            Box("Floor", square, new Vector2(0f, -4.9f), new Vector2(6.8f, 0.2f), -8f, LStatic, matStatic, new Color(0.55f, 0.45f, 0.3f));
 
             // placement zone
             var zone = new GameObject("PlacementZone") { layer = LayerMask.NameToLayer(LZone) };
@@ -144,11 +144,11 @@ namespace ChronosRepairShop.EditorTools
 
             // exit gate: trigger + solid door
             var gateGo = new GameObject("ExitGate") { layer = LayerMask.NameToLayer(LStatic) };
-            gateGo.transform.position = new Vector3(3.0f, -4.35f);
-            var gt = gateGo.AddComponent<BoxCollider2D>(); gt.isTrigger = true; gt.size = new Vector2(0.5f, 1.4f);
+            gateGo.transform.position = new Vector3(3.0f, -4.6f);
+            var gt = gateGo.AddComponent<BoxCollider2D>(); gt.isTrigger = true; gt.size = new Vector2(0.5f, 1.8f);
             var gate = gateGo.AddComponent<ExitGate>();
-            Sprite("GateGlow", square, gateGo.transform.position, new Vector3(0.5f, 1.4f), new Color(0.3f, 1f, 0.5f, 0.35f), -5);
-            var door = Box("GateDoor", square, new Vector2(2.7f, -4.35f), new Vector2(0.2f, 1.6f), 0f, LStatic, matStatic, new Color(0.9f, 0.25f, 0.25f));
+            Sprite("GateGlow", square, gateGo.transform.position, new Vector3(0.5f, 1.8f), new Color(0.3f, 1f, 0.5f, 0.35f), -5);
+            var door = Box("GateDoor", square, new Vector2(2.7f, -4.6f), new Vector2(0.2f, 2.0f), 0f, LStatic, matStatic, new Color(0.9f, 0.25f, 0.25f));
 
             var mech = new GameObject("ClockMechanism").AddComponent<ClockMechanism>();
             Ref(mech, "gate", gate);
@@ -160,6 +160,10 @@ namespace ChronosRepairShop.EditorTools
             leak.transform.position = new Vector3(0f, -8f);
             leak.AddComponent<BoxCollider2D>().size = new Vector2(10f, 2f);
             leak.AddComponent<LeakZone>();
+
+            // hint: ghost gears show roughly where the two gears go
+            Sprite("HintGearA", gearSprite, new Vector3(0.5f, 0f), Vector3.one * 1.2f, new Color(1f, 1f, 1f, 0.22f), -4);
+            Sprite("HintGearB", gearSprite, new Vector3(1.5f, -0.5f), Vector3.one * 1.2f, new Color(1f, 1f, 1f, 0.22f), -4);
 
             // ball spawn
             var spawn = new GameObject("BallSpawn");

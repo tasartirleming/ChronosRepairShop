@@ -18,7 +18,7 @@ namespace ChronosRepairShop
         [SerializeField] float spinSpeed = 180f;
         [SerializeField] float minImpactSpeed = 1.5f;
         [Tooltip("Max gap between rims that still counts as meshing")]
-        [SerializeField] float meshPadding = 0.15f;
+        [SerializeField] float meshPadding = 0.25f;
         [Tooltip("Centre distance below this fraction of (r1+r2) jams the gears")]
         [SerializeField, Range(0.5f, 1f)] float jamFraction = 0.75f;
         [Tooltip("Stay powered once hit. Off = powered only while the ball keeps driving it.")]
